@@ -44,3 +44,34 @@
     
     - Open-WebUI: `http://localhost:3000` (or configured port)
     - Stable Diffusion: `http://localhost:7860`
+
+
+### Configuration Notes
+
+- **Set Path vs. Volume**: We use a set path for the `stablediff` service volumes:
+    
+    yaml
+    
+    `volumes: - H:/Stable-diffusion:/stable-diffusion-webui - H:/Stable-diffusion/models:/stable-diffusion-webui/models/Stable-diffusion`
+    
+    Alternatively, you can use Docker volumes for better portability:
+    
+    yaml
+    
+    `volumes: - stable-diffusion-data:/stable-diffusion-webui - stable-diffusion-models:/stable-diffusion-webui/models/Stable-diffusion`
+    
+
+volumes: stable-diffusion-data: {} stable-diffusion-models: {}
+
+yaml
+
+``- **Using NVIDIA GPU**: The `stablediff` service is configured to use an NVIDIA GPU: ```yaml environment: NVIDIA_VISIBLE_DEVICES: '0' deploy: resources: reservations: devices: - driver: nvidia device_ids: ['0'] capabilities: [compute, utility]``
+
+This setup ensures that the container utilizes GPU resources for better performance in tasks like image generation.
+
+- **Using CPU Instead of GPU**: If you prefer to use a CPU, remove the NVIDIA-specific configurations:
+    
+    yaml
+    
+    `environment: TZ: "UTC" COMMANDLINE_ARGS: "--listen" deploy: resources: reservations: {} volumes: - H:/Stable-diffusion:/stable-diffusion-webui - H:/Stable-diffusion/models:/stable-diffusion-webui/models/Stable-diffusion ports: - "7860:7860"`
+    
