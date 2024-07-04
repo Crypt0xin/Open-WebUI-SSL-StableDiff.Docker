@@ -1,0 +1,53 @@
+
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: openwebui
+    restart: unless-stopped
+    volumes:
+      - open-webui:/app/backend/data
+    ports:
+      - "${OPEN_WEBUI_PORT-3000}:8080"
+    environment:
+      - CREWAI_MEMORY=${CREWAI_MEMORY}
+      - CREWAI_VERBOSE=${CREWAI_VERBOSE}
+      - OLLAMA_API_BASE_URL=${OLLAMA_API_BASE_URL}
+      - MODEL_NAME=${MODEL_NAME}
+      - 'WEBUI_SECRET_KEY='
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "443:443"
+      - "80:80"
+    depends_on:
+      - open-webui
+
+  stablediff:
+    image: ghcr.io/jemeyer/stable-diffusion-webui:latest
+    container_name: stablediff-runner
+    environment:
+      TZ: "UTC"
+      NVIDIA_VISIBLE_DEVICES: '0'
+      COMMANDLINE_ARGS: "--listen"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['0']
+              capabilities: [compute, utility]
+    volumes:
+      - H:/Stable-diffusion:/stable-diffusion-webui
+      - H:/Stable-diffusion/models:/stable-diffusion-webui/models/Stable-diffusion
+    ports:
+      - "7860:7860"
+
+volumes:
+  open-webui: {}
